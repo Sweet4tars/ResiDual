@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.so
+.DS_Store
+.vscode/
+.idea/
+
+# local outputs
+runs/
+logs/
+results/
+*.log
+*.npy
+*.pth
+*.pt
+
+# local datasets / images
+data/flickr30k-images/
+data/coco-images/
+
+# notebook / cache
+.ipynb_checkpoints/
+

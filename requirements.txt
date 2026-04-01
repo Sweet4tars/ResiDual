@@ -1,0 +1,8 @@
+numpy
+Pillow
+tensorboard
+tensorboard_logger
+torch
+torchvision
+transformers
+
