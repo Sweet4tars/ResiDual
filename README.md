@@ -166,10 +166,10 @@ Fill these links manually after upload.
 
 | Setting | Checkpoint | Training Log |
 |---|---|---|
-| Flickr30K / ViT | link[https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY] | link[https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY] |
-| Flickr30K / Swin | link[https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY] | link[https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY] |
-| MS-COCO / ViT | link[https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY]  |  link[https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY] |
-| MS-COCO / Swin | link[https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY] | link[https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY] |
+| Flickr30K / ViT | [link](https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY) |  [link](https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY) |
+| Flickr30K / Swin |  [link](https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY) | [link](https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY) |
+| MS-COCO / ViT | [link](https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY) |   [link](https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY) |
+| MS-COCO / Swin |  [link](https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY) |  [link](https://drive.google.com/drive/folders/1IOP4NJVKj83wlKCGNPbG957Rv0IQuoCY) |
 
 ## Notes
 
