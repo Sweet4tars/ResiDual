@@ -67,7 +67,6 @@ class ContrastiveLoss(nn.Module):
             mask = torch.eye(scores.size(0), dtype=torch.bool, device=scores.device)
         else:
             mask = (img_ids.unsqueeze(1) == img_ids.unsqueeze(0))
-            # repeat = len(img_ids) - len(torch.unique(img_ids))
 
         cost_s = cost_s.masked_fill_(mask, 0)
         cost_im = cost_im.masked_fill_(mask, 0)

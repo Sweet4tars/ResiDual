@@ -45,11 +45,9 @@ class RawImageDataset(data.Dataset):
         self.data_path = data_path
         self.split = split
         self.tokenizer = tokenizer
-        self.train = train
 
-        # f30k: 31014 imgs, 145000 train_captions
-        # coco: 119287 imgs, 
-        loc = os.path.join(opt.data_path, opt.dataset)
+        root_path = data_path if data_path is not None else opt.data_path
+        loc = os.path.join(root_path, opt.dataset)
 
         self.image_base = opt.f30k_img_path if opt.dataset == 'f30k' else opt.coco_img_path
 
@@ -75,7 +73,6 @@ class RawImageDataset(data.Dataset):
 
         self.im_div = 5 if self.num_images != self.length else 1
             
-        print(opt.dataset, self.split)
 
     def __getitem__(self, index):
         

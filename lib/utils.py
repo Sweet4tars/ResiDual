@@ -274,9 +274,6 @@ def save_result(result, result_dir, filename, remove_duplicate=''):
 
     return final_result_file
 
-# for down-stream task fine-tune(e.g., cross-modal retrieval) optimizer
-# weight_decay=0.05
-# max_epoch=6
 def cosine_lr_schedule(optimizer, epoch, max_epoch=6, init_lr=1e-5, min_lr=0.):
     """Decay the learning rate"""
     lr = (init_lr - min_lr) * 0.5 * (1. + math.cos(math.pi * epoch / max_epoch)) + min_lr
@@ -291,9 +288,6 @@ def warmup_lr_schedule(optimizer, step=0, max_step=3000, init_lr=1e-6, max_lr=3e
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr    
 
-# for pre-train optimizer
-# weight_decay=0.05
-# max_epoch=20
 def step_lr_schedule(optimizer, epoch, init_lr=3e-4, min_lr=1e-6, decay_rate=0.9):        
     """Decay the learning rate"""
     lr = max(min_lr, init_lr * (decay_rate**epoch))
@@ -431,7 +425,6 @@ class GatherLayer(torch.autograd.Function):
     def backward(ctx, *grads):
         all_gradients = torch.stack(grads)
         
-        # op=torch.distributed.ReduceOp.SUM
         torch.distributed.all_reduce(all_gradients)
 
         return all_gradients[torch.distributed.get_rank()]
@@ -452,8 +445,6 @@ def all_gather_with_grad(tensors):
 
 # come from
 # https://github.com/Lightning-Universe/lightning-bolts/blob/master/pl_bolts/models/self_supervised/simclr/simclr_module.py#L224
-# the call method is: 
-# features_gather = SyncFunction.apply(features) 
 class SyncFunction(torch.autograd.Function):
     
     @staticmethod
@@ -481,7 +472,6 @@ class SyncFunction(torch.autograd.Function):
 
 # come from
 # https://github.com/openai/CLIP/issues/111#issuecomment-931955836
-# return AllGatherFunction.apply(tensor)
 class AllGatherFunction(torch.autograd.Function):
     
     @staticmethod

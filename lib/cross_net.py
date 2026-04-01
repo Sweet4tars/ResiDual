@@ -17,7 +17,6 @@ class TokenSparse(nn.Module):
         
         self.embed_dim = embed_dim
         self.sparse_ratio = sparse_ratio
-        # self.context_attention = nn.MultiheadAttention(embed_dim, num_heads=4)
     
     def forward(self, tokens, attention_x, attention_y):
         
@@ -53,8 +52,7 @@ class TokenSparse(nn.Module):
         non_keep_score = F.softmax(non_keep_score, dim=1).unsqueeze(-1)
 
         # get fusion token (B_v, 1, C)
-        extra_token = torch.sum(non_tokens * non_keep_score, dim=1, keepdim=True) 
-        # context_info, _ = self.context_attention(query=select_tokens, key=non_tokens, value=non_tokens)
+        extra_token = torch.sum(non_tokens * non_keep_score, dim=1, keepdim=True)
 
         return select_tokens, extra_token, score_mask
                   
@@ -112,8 +110,6 @@ class CrossSparseAggrNet_v2(nn.Module):
         self.sparse_ratio = opt.sparse_ratio 
         self.aggr_ratio = opt.aggr_ratio 
 
-        # self.attention_weight = opt.attention_weight
-        # self.ratio_weight = opt.ratio_weight
         
         # the number of aggregated patches
         self.keeped_patches = int(self.num_patches * self.aggr_ratio * self.sparse_ratio)
@@ -186,7 +182,6 @@ class CrossSparseAggrNet_v2(nn.Module):
 
             # aggregation
             aggr_tokens = self.aggr_net(select_tokens)
-            # aggr_tokens = select_tokens
 
             # add fusion token
             keep_spatial_tokens = torch.cat([aggr_tokens, extra_token], dim=1)

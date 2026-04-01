@@ -53,7 +53,7 @@ def get_argument_parser():
     parser.add_argument('--evaluate_cxc', type=int, default=0, help='the special evaluation for MS-COCO')
     parser.add_argument('--gpu-id', type=int, default=0, help='the gpu-id for runing')
 
-    parser.add_argument('--bert_path', type=str, default='../weights_models/bert-base-uncased')    
+    parser.add_argument('--bert_path', type=str, default='bert-base-uncased', help='BERT model name or local path')
 
     # optimizer
     parser.add_argument("--lr_schedules", default=[9, 15, 20, 25], type=int, nargs="+", help='epoch schedules for lr decay') 
@@ -63,11 +63,11 @@ def get_argument_parser():
     parser.add_argument('--max_word', type=int, default=90, help='the max length for word features')  
 
     # cross-modal alignment
-    parser.add_argument('--aggr_ratio', type=float, default=0.4, help='the aggr rate for visual token')
-    parser.add_argument('--sparse_ratio', type=float, default=0.5, help='the sprase rate for visual token') 
+    parser.add_argument('--aggr_ratio', type=float, default=0.4, help='aggregation ratio for visual tokens')
+    parser.add_argument('--sparse_ratio', type=float, default=0.5, help='sparsity ratio for visual tokens')
     parser.add_argument('--distill_weight', type=float, default=1.0, help='the weight for distillation loss')
-    parser.add_argument('--attention_weight', type=int, default=0.8, help='the weight of attention_map for mask prediction') 
-    parser.add_argument('--ratio_weight', type=float, default=2.0, help='if use detach for kt loss')
+    parser.add_argument('--attention_weight', type=float, default=0.8, help='the weight of attention map for mask prediction')
+    parser.add_argument('--ratio_weight', type=float, default=2.0, help='auxiliary weight for ratio-related objectives')
 
     return parser
 

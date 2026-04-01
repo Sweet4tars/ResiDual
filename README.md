@@ -27,8 +27,6 @@ Recommended dependencies:
 - transformers >= 4.32
 - Pillow
 - numpy
-- tensorboard
-- tensorboard_logger
 
 Install with:
 
@@ -105,6 +103,7 @@ ResiDual uses pretrained transformer backbones from Hugging Face:
 - [microsoft/swin-base-patch4-window7-224](https://huggingface.co/microsoft/swin-base-patch4-window7-224)
 
 The models will be downloaded automatically by `transformers` if they are not already cached locally.
+You can also pass a local BERT checkpoint or model name via `--bert_path`.
 
 ## Training
 

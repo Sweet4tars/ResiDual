@@ -37,26 +37,26 @@ class VisionTransEncoder(nn.Module):
                 try:
                     self.visual_encoder = SwinModel.from_pretrained("microsoft/swin-base-patch4-window12-384")
                     opt.num_patches = 144  # (384/4/12)^2 * (12*12) = 12*12 = 144
-                    print('swin-384 model with 12x12 patches')
-                except:
-                    print("Warning: swin-384 model not found, using swin-224 with 384 input")
+                    logger.info('Loaded Swin-384 backbone with 12x12 patches')
+                except Exception:
+                    logger.warning('Swin-384 checkpoint not found; falling back to the Swin-224 configuration.')
             elif 'swin_224' in opt.vit_type or opt.vit_type == 'swin':
                 # img_res 224 * 224, 7*7 patch
                 self.visual_encoder = SwinModel.from_pretrained("microsoft/swin-base-patch4-window7-224")
                 opt.num_patches = 49
-                print('swin-224 model with 7x7 patches')
+                logger.info('Loaded Swin-224 backbone with 7x7 patches')
         #  ViT model
         else:              
             if 'vit_384' in opt.vit_type:
                 # img_res 384 * 384, 24*24 patch (patch_size=16)
                 self.visual_encoder = ViTModel.from_pretrained("google/vit-base-patch16-384")
                 opt.num_patches = 576  # (384/16)^2 = 24*24 = 576
-                print('vit-384 model with 24x24 patches')
+                logger.info('Loaded ViT-384 backbone with 24x24 patches')
             elif 'vit_224' in opt.vit_type or opt.vit_type == 'vit':
                 # img_res 224 * 224, 14*14 patch (patch_size=16)
                 self.visual_encoder = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k")
                 opt.num_patches = 196  # (224/16)^2 = 14*14 = 196
-                print('vit-224 model with 14x14 patches')   
+                logger.info('Loaded ViT-224 backbone with 14x14 patches')
 
         # dimension transform
         if opt.embed_size == self.visual_encoder.config.hidden_size:
@@ -92,11 +92,8 @@ class EncoderText_BERT(nn.Module):
         self.opt = opt
         self.embed_size = opt.embed_size
         
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.bert = BertModel.from_pretrained('bert-base-uncased')
-        
-        # self.tokenizer = BertTokenizer.from_pretrained(opt.bert_path)
-        # self.bert = BertModel.from_pretrained(opt.bert_path)
+        self.tokenizer = BertTokenizer.from_pretrained(opt.bert_path)
+        self.bert = BertModel.from_pretrained(opt.bert_path)
         
         if opt.embed_size == self.bert.config.hidden_size:
             self.fc = nn.Identity()
@@ -110,7 +107,7 @@ class EncoderText_BERT(nn.Module):
         bert_attention_mask = (x != 0).float()
 
         # all hidden features, D=768 in bert-base model
-        # attention_mask： Mask to avoid performing attention on padding token indices.
+        # attention_mask masks out padding positions.
         # bert_output[0] is the last/final hidden states of all tokens
         # bert_output[1] is the hidden state of [CLS] + one fc layer + Tanh, can be used for classification tasks.
 

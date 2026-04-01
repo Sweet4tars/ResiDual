@@ -31,10 +31,7 @@ class AttentionPooling(nn.Module):
         return torch.sum(attn_weights * x, dim=1)
 
 class MultiHeadAttentionPooling(nn.Module):
-    """
-    用多个注意力头从不同子空间提取全局表示，
-    再投影回原维度，信息保留比单头更充分。
-    """
+    """Aggregate token features with multiple attention heads."""
     def __init__(self, input_dim, num_heads=4):
         super().__init__()
         self.heads = nn.ModuleList([
@@ -51,34 +48,17 @@ class MultiHeadAttentionPooling(nn.Module):
         return self.proj(torch.cat(head_outs, dim=-1))
 
 class ResidualComplementaryFusion(nn.Module):
-    """
-    残差补充融合：细粒度学习粗粒度遗漏的信息
-    
-    理论依据：
-    - 粗粒度捕捉主体语义（基础）
-    - 细粒度捕捉局部差异（残差补充）
-    - 类似 ResNet 的思想：学习残差比直接学习更容易
-    """
+    """Fuse fine- and coarse-grained similarities with learnable residual scaling."""
     def __init__(self, temperature=0.1):
         super().__init__()
         self.temp = temperature
-        # 可学习的残差缩放因子
         self.residual_scale = nn.Parameter(torch.tensor(0.5))
     
     def forward(self, fine_sims, coarse_sims):
-        """
-        fused = coarse + scale * (fine - coarse)
-              = coarse + scale * residual
-        
-        当 scale=0 时退化为纯粗粒度
-        当 scale=1 时退化为纯细粒度
-        """
         residual = fine_sims - coarse_sims
         
-        # 使用 sigmoid 限制 scale 范围
         scale = torch.sigmoid(self.residual_scale)
         
-        # fused_sims = coarse_sims + scale * residual
         fused_sims = fine_sims + scale * residual
         
         return fused_sims
@@ -94,7 +74,7 @@ class BidirectionalDistillationLoss(nn.Module):
         self.kl_loss = nn.KLDivLoss(reduction='batchmean')
     
     def forward(self, fine_sims, coarse_sims, return_breakdown=False):
-        # Fine → Coarse
+        # Fine -> Coarse
         fine_p_i2t = F.softmax(fine_sims / self.temp_f2c, dim=1)
         coarse_logp_i2t = F.log_softmax(coarse_sims / self.temp_f2c, dim=1)
         loss_f2c_i2t = self.kl_loss(coarse_logp_i2t, fine_p_i2t)
@@ -105,7 +85,7 @@ class BidirectionalDistillationLoss(nn.Module):
         
         loss_f2c = loss_f2c_i2t + loss_f2c_t2i
         
-        # Coarse → Fine
+        # Coarse -> Fine
         coarse_p_i2t = F.softmax(coarse_sims / self.temp_c2f, dim=1)
         fine_logp_i2t = F.log_softmax(fine_sims / self.temp_c2f, dim=1)
         loss_c2f_i2t = self.kl_loss(fine_logp_i2t, coarse_p_i2t)
@@ -137,7 +117,7 @@ class VSEModel(nn.Module):
         
         self.cross_net = CrossSparseAggrNet_v2(opt)
         
-         # ---------- 粗粒度：多头注意力池化 ----------
+        # Coarse-grained multi-head attention pooling
         num_pool_heads = getattr(opt, 'num_pool_heads', 4)
         self.img_pool = MultiHeadAttentionPooling(opt.embed_size, num_heads=num_pool_heads)
         self.txt_pool = MultiHeadAttentionPooling(opt.embed_size, num_heads=num_pool_heads)
@@ -155,7 +135,7 @@ class VSEModel(nn.Module):
         self.current_epoch = 0
 
     def set_epoch(self, epoch):
-        """由训练脚本调用，设置当前 epoch"""
+        """Set the current epoch from the training loop."""
         self.current_epoch = epoch
 
     def freeze_backbone(self):
@@ -198,26 +178,15 @@ class VSEModel(nn.Module):
         coarse_sims = self._compute_coarse_sims(img_embs, cap_embs, cap_lens)
 
         fused_sims = self.fusion(fine_sims, coarse_sims)
-        # fused_sims = 0.5 * fine_sims + 0.5 * coarse_sims
-        # fusion_weights = 0.5
         
         return {
             'fused': fused_sims,
             'fine': fine_sims,
             'coarse': coarse_sims,
             'score_mask': score_mask,
-            # 'fusion_weights': fusion_weights
         }
 
     def forward(self, images, captions, lengths, img_ids=None, warmup_alpha=1.):
-        """
-        训练前向传播
-        
-        关键修复：
-        1. 对齐损失设置最小值，避免完全被抑制
-        2. 蒸馏损失延迟启动，确保对齐先学习
-        3. 蒸馏损失也受 warmup 影响
-        """
         self.Eiters += 1
         
         img_emb = self.img_enc(images)
@@ -243,33 +212,24 @@ class VSEModel(nn.Module):
         coarse_sims = sim_dict['coarse']
         score_mask = sim_dict['score_mask']
         
-        # ==================== 修复：损失计算 ====================
-        
-        # 修复1: 对齐损失设置最小 warmup，确保始终有对齐信号
-        # align_warmup = max(warmup_alpha, 0.2)  # 最小 0.2
+
         align_loss = self.criterion(img_emb, cap_emb, img_ids, fused_sims) * warmup_alpha
-        
-        # 修复2: 稀疏损失不受 warmup 影响
+
         ratio_loss = (score_mask.mean() - self.opt.sparse_ratio) ** 2
-        
-        # 修复3: 蒸馏损失延迟启动 + 受 warmup 影响
+
         distill_weight = getattr(self.opt, 'distill_weight', 1.0)
-        
-        # self.set_epoch()
+
         if self.current_epoch < self.distill_start_epoch:
-            # 第一个 epoch 不启用蒸馏，专注对齐学习
             distill_loss = torch.tensor(0.0, device=fused_sims.device)
         else:
-            # 蒸馏也受 warmup 影响（但最小值更高）
             distill_loss = self.distill_loss_fn(fine_sims, coarse_sims)
-        
-        # 总损失
+
         loss = align_loss + self.opt.aggr_ratio * ratio_loss + distill_weight * distill_loss
         
         return loss
 
     def get_loss_breakdown(self, images, captions, lengths, img_ids=None, warmup_alpha=1.):
-        """返回损失分量（用于调试和日志）"""
+        """Return the loss breakdown for logging or debugging."""
         self.Eiters += 1
         
         img_emb = self.img_enc(images)
@@ -292,9 +252,7 @@ class VSEModel(nn.Module):
         fine_sims = sim_dict['fine']
         coarse_sims = sim_dict['coarse']
         score_mask = sim_dict['score_mask']
-        # fusion_weights = sim_dict['fusion_weights']
-        
-        # align_warmup = max(warmup_alpha, 0.2)
+
         align_loss = self.criterion(img_emb, cap_emb, img_ids, fused_sims) * warmup_alpha
         ratio_loss = (score_mask.mean() - self.opt.sparse_ratio) ** 2
         
@@ -302,7 +260,6 @@ class VSEModel(nn.Module):
             distill_loss = torch.tensor(0.0, device=fused_sims.device)
             distill_breakdown = {'f2c_total': 0.0, 'c2f_total': 0.0}
         else:
-            # distill_warmup = max(warmup_alpha, 0.5)
             distill_loss, distill_breakdown = self.distill_loss_fn(
                 fine_sims, coarse_sims, return_breakdown=True
             )
@@ -318,7 +275,6 @@ class VSEModel(nn.Module):
             'distill_f2c': distill_breakdown['f2c_total'],
             'distill_c2f': distill_breakdown['c2f_total'],
             'sparse_ratio': score_mask.mean(),
-            # 'fusion_weight_mean': fusion_weights.mean(),
             'warmup_alpha': warmup_alpha
         }
 

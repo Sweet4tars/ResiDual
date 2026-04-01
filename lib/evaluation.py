@@ -136,8 +136,7 @@ def evalrank(model_path, model=None, data_path=None, split='dev', fold5=False, s
     logger.info(opt)
 
     # load vocabulary used by the model
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    # tokenizer = BertTokenizer.from_pretrained(opt.bert_path)
+    tokenizer = BertTokenizer.from_pretrained(opt.bert_path)
 
     # construct model
     if model is None:
@@ -149,7 +148,8 @@ def evalrank(model_path, model=None, data_path=None, split='dev', fold5=False, s
 
     logger.info('Loading dataset')
     eval_batch_size = getattr(opt, 'eval_batch_size', getattr(opt, 'batch_size', 128))
-    data_loader = image_caption.get_test_loader(opt, data_path, tokenizer, eval_batch_size, opt.workers, split)
+    eval_data_path = data_path if data_path is not None else opt.data_path
+    data_loader = image_caption.get_test_loader(opt, eval_data_path, tokenizer, eval_batch_size, opt.workers, split)
 
     logger.info('Computing results...')
     with torch.no_grad():
@@ -168,7 +168,6 @@ def evalrank(model_path, model=None, data_path=None, split='dev', fold5=False, s
         sims = shard_attn_scores(model, img_embs, cap_embs, cap_lens, opt).numpy()
         end = time.time()
 
-        # npts = the number of images
         npts = img_embs.shape[0]
 
         if save_path is not None:
@@ -186,9 +185,7 @@ def evalrank(model_path, model=None, data_path=None, split='dev', fold5=False, s
 
         rsum = r[0] + r[1] + r[2] + ri[0] + ri[1] + ri[2]
         logger.info("rsum: %.1f" % rsum)
-        # logger.info("Average i2t Recall: %.1f" % ar)
         logger.info("Image to text (R@1, R@5, R@10): %.1f %.1f %.1f" % r[:3])
-        # logger.info("Average t2i Recall: %.1f" % ari)
         logger.info("Text to image (R@1, R@5, R@10): %.1f %.1f %.1f" % ri[:3])
     
     else:
@@ -215,16 +212,13 @@ def evalrank(model_path, model=None, data_path=None, split='dev', fold5=False, s
             ar = (r[0] + r[1] + r[2]) / 3
             ari = (ri[0] + ri[1] + ri[2]) / 3
             rsum = r[0] + r[1] + r[2] + ri[0] + ri[1] + ri[2]
-            # logger.info("rsum: %.1f ar: %.1f ari: %.1f" % (rsum, ar, ari))
             results += [list(r) + list(ri) + [ar, ari, rsum]]
 
         logger.info("-----------------------------------")
         logger.info("Mean metrics: ")
         mean_metrics = tuple(np.array(results).mean(axis=0).flatten())
         logger.info("rsum: %.1f" % (mean_metrics[12]))
-        # logger.info("Average i2t Recall: %.1f" % mean_metrics[10])
         logger.info("Image to text (R@1, R@5, R@10): %.1f %.1f %.1f" % mean_metrics[:3])
-        # logger.info("Average t2i Recall: %.1f" % mean_metrics[11])
         logger.info("Text to image (R@1, R@5, R@10): %.1f %.1f %.1f" % mean_metrics[5:8])
 
 
