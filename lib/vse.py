@@ -55,7 +55,7 @@ class ResidualComplementaryFusion(nn.Module):
         self.residual_scale = nn.Parameter(torch.tensor(0.5))
     
     def forward(self, fine_sims, coarse_sims):
-        residual = fine_sims - coarse_sims
+        residual = torch.abs(coarse_sims - fine_sims)
         
         scale = torch.sigmoid(self.residual_scale)
         
